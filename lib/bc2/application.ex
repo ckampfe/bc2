@@ -8,7 +8,10 @@ defmodule Bc2.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Registry, keys: :unique, name: Bc2.Registry},
+      {
+        Registry,
+        keys: :unique, name: Bc2.Registry, partitions: System.schedulers_online()
+      },
       {Bc2.Controller, %{}},
       {Bc2.DatabasesSupervisor, %{}}
     ]
