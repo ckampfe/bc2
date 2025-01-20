@@ -3,8 +3,6 @@ defmodule Bc2.Reader do
 
   alias Bc2.{Controller, Fs}
 
-  defstruct [:table, :dir, :file_id, :file, :entry_position]
-
   def fetch(directory, key) do
     with {_, {:ok, keydir_table}} <- {:fetch_keydir, Controller.fetch_keydir(directory)},
          {_, [{^key, file_id, value_size, entry_position, _timestamp}]} <-
