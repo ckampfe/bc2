@@ -8,7 +8,8 @@ defmodule Bc2.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {PartitionSupervisor, child_spec: Bc2.Reader.child_spec([]), name: Bc2.PartitionSupervisor},
+      {Registry, keys: :unique, name: Bc2.Registry},
+      {Bc2.Controller, %{}},
       {Bc2.DatabasesSupervisor, %{}}
     ]
 

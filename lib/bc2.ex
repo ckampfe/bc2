@@ -1,41 +1,52 @@
-# architecture to investigate:
-# - single writer process
-# - N reader processes, partitioned by PartitionSupervisor
-# - call read/write/delete with some opaque handle, API does the right thing
-#
-# we want to have writes via a single process
-# we want up to some N number of concurrent readers
+# TODO
+# - [ ] merge
+# - [ ] configure max file size
 
 defmodule Bc2 do
-  def new(options) do
-    Bc2.Keydir.start_link(options)
+  alias Bc2.{Controller, DatabasesSupervisor, Reader, Writer}
+
+  def new(directory) when is_binary(directory) do
+    new(directory, [])
   end
 
-  def fetch(handle, key) do
-    Bc2.Keydir.read(handle, key)
+  @doc """
+  options:
+  - directory (required)
+  """
+  def new(directory, options) when is_binary(directory) and is_list(options) do
+    options = Keyword.put(options, :directory, directory)
+    DatabasesSupervisor.start_writer(options)
   end
 
-  def put(handle, key, value) do
-    Bc2.Keydir.write(handle, key, value)
+  def fetch(directory, key) when is_binary(directory) do
+    Reader.fetch(directory, key)
   end
 
-  def delete(handle, key) do
-    Bc2.Keydir.delete(handle, key)
+  def put(directory, key, value) when is_binary(directory) do
+    Writer.write(directory, key, value)
   end
 
-  def keys(_handle) do
+  def delete(directory, key) when is_binary(directory) do
+    Writer.delete(directory, key)
+  end
+
+  def keys(directory) when is_binary(directory) do
+    Reader.keys(directory)
+  end
+
+  def merge(directory) when is_binary(directory) do
     # TODO
   end
 
-  def merge(_handle) do
-    # TODO
+  def sync(directory) when is_binary(directory) do
+    Writer.sync(directory)
   end
 
-  def sync(handle) do
-    Bc2.Keydir.sync(handle)
-  end
-
-  def close(_handle) do
-    # TODO
+  def close(directory) when is_binary(directory) do
+    with {_, :ok} <- {:sync, sync(directory)},
+         {_, true} <- {:delete_keydir, Controller.delete_keydir(directory)},
+         {_, :ok} <- {:stop_writer, DatabasesSupervisor.stop_writer(directory)} do
+      :ok
+    end
   end
 end

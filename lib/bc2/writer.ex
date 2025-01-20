@@ -1,35 +1,44 @@
 defmodule Bc2.Writer do
-  use GenServer
-  alias Bc2.Fs
+  @moduledoc false
 
-  defstruct [:table, :dir, :file_id, :file, :entry_position]
+  use GenServer
+  alias Bc2.{Controller, Fs}
+
+  defstruct [:table, :directory, :file_id, :file, :entry_position]
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+    GenServer.start_link(
+      __MODULE__,
+      args,
+      name: name(args[:directory])
+    )
   end
 
-  def write(server, key, value) do
-    GenServer.call(server, {:write, key, value})
+  def write(directory, key, value) do
+    GenServer.call(name(directory), {:write, key, value})
   end
 
-  def delete(server, key) do
-    GenServer.call(server, {:delete, key})
+  def delete(directory, key) do
+    GenServer.call(name(directory), {:delete, key})
   end
 
-  def sync(server) do
-    GenServer.call(server, :sync)
+  def sync(directory) do
+    GenServer.call(name(directory), :sync)
   end
 
   def init(args) do
-    {:ok, %__MODULE__{dir: args[:dir]}, {:continue, :initialize_table}}
+    {:ok, %__MODULE__{directory: args[:directory]}, {:continue, :initialize_table}}
   end
 
   def handle_continue(:initialize_table, %__MODULE__{} = state) do
     table = :ets.new(:bc2_keydir, [:public, :set, read_concurrency: true])
+
+    true = Controller.register_keydir(state.directory, table)
+
     # TODO make this truly random/unique so it doesn't class with exist files
     file_id = System.unique_integer([:positive, :monotonic])
 
-    path = Path.join(state.dir, "#{file_id}.bc2")
+    path = Controller.database_file(state.directory, file_id)
 
     {:ok, file} = :file.open(path, [:read, :append, :raw, :binary])
 
@@ -68,5 +77,16 @@ defmodule Bc2.Writer do
 
   def handle_call(:sync, _from, state) do
     {:reply, :file.sync(state.file), state}
+  end
+
+  def name(directory) do
+    {:via, Registry, {Bc2.Registry, {__MODULE__, directory}}}
+  end
+
+  def pid(directory) do
+    case Registry.lookup(Bc2.Registry, {__MODULE__, directory}) do
+      [{pid, _}] -> pid
+      _ -> nil
+    end
   end
 end

@@ -65,19 +65,19 @@ defmodule Bc2.Fs do
     end
   end
 
-  def encode(term) do
+  defp encode(term) do
     :erlang.term_to_binary(term)
   end
 
-  def decode(binary) do
+  defp decode(binary) do
     :erlang.binary_to_term(binary)
   end
 
-  def encode_u32(n) do
+  defp encode_u32(n) do
     <<n::unsigned-32>>
   end
 
-  def encode_u64(n) do
+  defp encode_u64(n) do
     <<n::unsigned-64>>
   end
 end
