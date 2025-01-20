@@ -21,3 +21,6 @@ bc2-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# bc2 database files
+*.bc2
