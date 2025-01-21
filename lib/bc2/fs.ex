@@ -115,15 +115,29 @@ defmodule Bc2.Fs do
     case :file.pread(file, position, prefix_size()) do
       {:ok,
        <<
-         _crc::binary-size(4),
-         timestamp::unsigned-integer-64,
-         key_size::unsigned-integer-32,
-         value_size::unsigned-integer-32
+         crc::unsigned-integer-32,
+         timestamp_encoded::binary-size(8),
+         key_size_encoded::binary-size(4),
+         value_size_encoded::binary-size(4)
        >>} ->
-        {:ok, <<key::binary-size(key_size)>>} =
-          :file.pread(file, position + prefix_size(), key_size)
+        key_size = decode_u32(key_size_encoded)
+        value_size = decode_u32(value_size_encoded)
 
-        f.({decode(key), file_id, value_size, position, timestamp})
+        {:ok, <<key::binary-size(key_size), value::binary-size(value_size)>>} =
+          :file.pread(file, position + prefix_size(), key_size + value_size)
+
+        challenge_crc =
+          :erlang.crc32([
+            timestamp_encoded,
+            key_size_encoded,
+            value_size_encoded,
+            key,
+            value
+          ])
+
+        ^crc = challenge_crc
+
+        f.({decode(key), file_id, value_size, position, decode_u64(timestamp_encoded)})
 
         do_load_records(file, file_id, position + prefix_size() + key_size + value_size, f)
 
@@ -148,7 +162,15 @@ defmodule Bc2.Fs do
     <<n::unsigned-32>>
   end
 
+  defp decode_u32(<<n::unsigned-integer-32>>) do
+    n
+  end
+
   defp encode_u64(n) do
     <<n::unsigned-64>>
+  end
+
+  defp decode_u64(<<n::unsigned-integer-64>>) do
+    n
   end
 end
