@@ -27,24 +27,21 @@ defmodule Bc2.Writer do
   end
 
   def init(args) do
-    {:ok, %__MODULE__{directory: args[:directory]}, {:continue, :initialize_table}}
-  end
-
-  def handle_continue(:initialize_table, %__MODULE__{} = state) do
     table = :ets.new(:bc2_keydir, [:public, :set, read_concurrency: true])
 
-    true = Controller.register_keydir(state.directory, table)
+    Controller.register_keydir(args[:directory], table)
 
-    # TODO make this truly random/unique so it doesn't class with exist files
-    file_id = System.unique_integer([:positive, :monotonic])
+    {:ok, latest_file_id} = Fs.load_keydir_from_files(args[:directory])
 
-    path = Controller.database_file(state.directory, file_id)
+    file_id = latest_file_id + 1
+
+    path = Controller.database_file(args[:directory], file_id)
 
     {:ok, file} = :file.open(path, [:read, :append, :raw, :binary])
 
-    state = %{state | file: file, table: table, file_id: file_id, entry_position: 0}
+    state = %__MODULE__{file: file, table: table, file_id: file_id, entry_position: 0}
 
-    {:noreply, state}
+    {:ok, state}
   end
 
   def handle_call({:delete, key}, _from, state) do

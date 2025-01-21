@@ -1,5 +1,5 @@
 # TODO
-# - [ ] load database files on writer start to create keydir
+# - [x] load database files on writer start to create keydir
 # - [ ] merge
 # - [ ] configure max file size
 # - [ ] have the writer process read the existing database files and create a unique file

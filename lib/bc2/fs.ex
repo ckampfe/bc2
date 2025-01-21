@@ -1,4 +1,6 @@
 defmodule Bc2.Fs do
+  alias Bc2.Controller
+
   @moduledoc false
 
   @crc_size 4
@@ -65,11 +67,78 @@ defmodule Bc2.Fs do
     end
   end
 
+  def load_keydir_from_files(directory) do
+    db_files =
+      directory
+      |> Path.join("*.bc2")
+      |> Path.wildcard()
+      |> Enum.sort_by(fn match ->
+        name = Path.basename(match, ".bc2")
+        {name_as_integer, _} = Integer.parse(name)
+        name_as_integer
+      end)
+
+    max_id =
+      Enum.map(db_files, fn match ->
+        name = Path.basename(match, ".bc2")
+        {name_as_integer, _} = Integer.parse(name)
+        name_as_integer
+      end)
+      |> Enum.max(&>=/2, fn -> 0 end)
+
+    {:ok, keydir_table} = Controller.fetch_keydir(directory)
+
+    :ok =
+      Enum.each(db_files, fn db_file ->
+        :ok =
+          load_records(db_file, fn record ->
+            :ets.insert(
+              keydir_table,
+              record
+            )
+          end)
+      end)
+
+    {:ok, max_id}
+  end
+
+  def load_records(file_path, f) do
+    {:ok, file} = :file.open(file_path, [:raw, :read, :binary])
+    file_id = Path.basename(file_path, ".bc2")
+    {file_id, _} = Integer.parse(file_id)
+    do_load_records(file, file_id, 0, f)
+  end
+
+  defp do_load_records(file, file_id, position, f) do
+    case :file.pread(file, position, prefix_size()) do
+      {:ok,
+       <<
+         _crc::binary-size(4),
+         timestamp::unsigned-integer-64,
+         key_size::unsigned-integer-32,
+         value_size::unsigned-integer-32
+       >>} ->
+        {:ok, <<key::binary-size(key_size)>>} =
+          :file.pread(file, position + prefix_size(), key_size)
+
+        f.({decode(key), file_id, value_size, position, timestamp})
+
+        do_load_records(file, file_id, position + prefix_size() + key_size + value_size, f)
+
+      :eof ->
+        :file.close(file)
+        :ok
+
+      {:error, _} = e ->
+        e
+    end
+  end
+
   defp encode(term) do
     :erlang.term_to_binary(term)
   end
 
-  defp decode(binary) do
+  def decode(binary) do
     :erlang.binary_to_term(binary)
   end
 

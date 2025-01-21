@@ -99,4 +99,22 @@ defmodule Bc2Test do
     assert :ok = Bc2.put(dir, :c, :world)
     assert [:c, :b, :a] = Bc2.keys(dir)
   end
+
+  test "load files in directory on start", context do
+    dir = context[:tmp_path]
+
+    assert :ok = Bc2.new(dir)
+    assert :ok = Bc2.put(dir, :a, :world)
+    assert :ok = Bc2.put(dir, :b, :world)
+    assert :ok = Bc2.put(dir, :c, :world)
+    assert {:ok, :world} = Bc2.fetch(dir, :a)
+
+    assert :ok = Bc2.close(dir)
+
+    assert :ok = Bc2.new(dir)
+
+    assert {:ok, :world} = Bc2.fetch(dir, :a)
+    assert {:ok, :world} = Bc2.fetch(dir, :b)
+    assert {:ok, :world} = Bc2.fetch(dir, :c)
+  end
 end
