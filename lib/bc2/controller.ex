@@ -28,12 +28,7 @@ defmodule Bc2.Controller do
 
   @impl GenServer
   def init(args) do
-    {:ok, args, {:continue, :initialize_metatable}}
-  end
-
-  @impl GenServer
-  def handle_continue(:initialize_metatable, state) do
     :ets.new(:bc2_metatable, [:public, :set, :named_table, read_concurrency: true])
-    {:noreply, state}
+    {:ok, args}
   end
 end
