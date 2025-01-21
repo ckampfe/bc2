@@ -1,5 +1,7 @@
 # Bc2
 
+[![Elixir CI](https://github.com/ckampfe/bc2/actions/workflows/elixir.yml/badge.svg)](https://github.com/ckampfe/bc2/actions/workflows/elixir.yml)
+
 Yet another [Bitcask](https://en.wikipedia.org/wiki/Bitcask) implementation.
 
 ## What
