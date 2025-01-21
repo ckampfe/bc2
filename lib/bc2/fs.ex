@@ -41,11 +41,11 @@ defmodule Bc2.Fs do
 
     encoded_key = encode(key)
     key_size = byte_size(encoded_key)
-    encoded_key_size = byte_size(encoded_key) |> encode_u32()
+    encoded_key_size = encode_u32(key_size)
 
     encoded_value = encode(value)
     value_size = byte_size(encoded_value)
-    encoded_value_size = value_size |> encode_u32()
+    encoded_value_size = encode_u32(value_size)
 
     payload = [
       encoded_timestamp,
@@ -55,8 +55,10 @@ defmodule Bc2.Fs do
       encoded_value
     ]
 
-    crc32 = :erlang.crc32(payload)
-    encoded_crc = encode_u32(crc32)
+    encoded_crc =
+      payload
+      |> :erlang.crc32()
+      |> encode_u32()
 
     case :file.write(file, [encoded_crc, payload]) do
       :ok ->
