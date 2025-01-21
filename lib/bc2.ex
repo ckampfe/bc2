@@ -4,6 +4,7 @@
 # - [ ] configure max file size
 # - [x] have the writer process read the existing database files and create a unique file
 # - [ ] discard partial power-outage writes
+# - [ ] should database load and merge processes start from the oldest or the newest db file?
 
 defmodule Bc2 do
   alias Bc2.{Controller, DatabasesSupervisor, Reader, Writer}

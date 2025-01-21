@@ -93,11 +93,18 @@ defmodule Bc2.Fs do
     :ok =
       Enum.each(db_files, fn db_file ->
         :ok =
-          load_records(db_file, fn record ->
-            :ets.insert(
-              keydir_table,
-              record
-            )
+          load_records(db_file, fn
+            {:insert, record} ->
+              :ets.insert(
+                keydir_table,
+                record
+              )
+
+            {:delete, {key, _, _, _, _}} ->
+              :ets.delete(
+                keydir_table,
+                key
+              )
           end)
       end)
 
@@ -137,7 +144,13 @@ defmodule Bc2.Fs do
 
         ^crc = challenge_crc
 
-        f.({decode(key), file_id, value_size, position, decode_u64(timestamp_encoded)})
+        record = {decode(key), file_id, value_size, position, decode_u64(timestamp_encoded)}
+
+        if decode(value) == :bc2_delete do
+          f.({:delete, record})
+        else
+          f.({:insert, record})
+        end
 
         do_load_records(file, file_id, position + prefix_size() + key_size + value_size, f)
 

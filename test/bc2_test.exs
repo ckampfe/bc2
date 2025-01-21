@@ -117,4 +117,27 @@ defmodule Bc2Test do
     assert {:ok, :world2} = Bc2.fetch(dir, :b)
     assert {:ok, :world3} = Bc2.fetch(dir, :c)
   end
+
+  test "does not load deletes", context do
+    dir = context[:tmp_path]
+
+    assert :ok = Bc2.new(dir)
+    assert :ok = Bc2.put(dir, :a, :world1)
+    assert :ok = Bc2.put(dir, :b, :world2)
+
+    assert {:ok, :world1} = Bc2.fetch(dir, :a)
+    assert {:ok, :world2} = Bc2.fetch(dir, :b)
+
+    # now delete :a
+    assert :ok = Bc2.delete(dir, :a)
+
+    assert :ok = Bc2.close(dir)
+
+    assert :ok = Bc2.new(dir)
+
+    assert {:error, :not_found} = Bc2.fetch(dir, :a)
+    assert {:ok, :world2} = Bc2.fetch(dir, :b)
+
+    assert [:b] = Bc2.keys(dir)
+  end
 end
