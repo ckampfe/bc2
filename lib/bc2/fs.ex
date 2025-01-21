@@ -34,7 +34,7 @@ defmodule Bc2.Fs do
   def write(file, key, value) do
     timestamp =
       DateTime.utc_now()
-      |> DateTime.to_unix()
+      |> DateTime.to_unix(:millisecond)
 
     encoded_timestamp =
       encode_u64(timestamp)
