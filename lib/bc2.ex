@@ -2,7 +2,7 @@
 # - [x] load database files on writer start to create keydir
 # - [ ] merge
 # - [ ] configure max file size
-# - [ ] have the writer process read the existing database files and create a unique file
+# - [x] have the writer process read the existing database files and create a unique file
 
 defmodule Bc2 do
   alias Bc2.{Controller, DatabasesSupervisor, Reader, Writer}
