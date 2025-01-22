@@ -1,5 +1,5 @@
 defmodule Bc2Test do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Bc2
 
   setup do
