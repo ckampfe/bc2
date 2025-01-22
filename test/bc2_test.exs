@@ -140,4 +140,21 @@ defmodule Bc2Test do
 
     assert [:b] = Bc2.keys(dir)
   end
+
+  test "allows multiple databases to be open concurrently", context do
+    dir1 = context[:tmp_path]
+    {:ok, dir2} = Temp.mkdir()
+
+    assert :ok = Bc2.new(dir1)
+    assert :ok = Bc2.put(dir1, :a, :world1)
+    assert {:ok, :world1} = Bc2.fetch(dir1, :a)
+
+    assert :ok = Bc2.new(dir2)
+    assert :ok = Bc2.put(dir2, :b, :world2)
+    assert {:ok, :world2} = Bc2.fetch(dir2, :b)
+
+    # they do not contain each other's keys
+    assert {:error, :not_found} = Bc2.fetch(dir1, :b)
+    assert {:error, :not_found} = Bc2.fetch(dir2, :a)
+  end
 end
