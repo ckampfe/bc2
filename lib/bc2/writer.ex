@@ -27,6 +27,8 @@ defmodule Bc2.Writer do
   end
 
   def init(args) do
+    Process.set_label("Writer for #{args[:directory]}")
+
     table = :ets.new(:bc2_keydir, [:public, :set, read_concurrency: true])
 
     Controller.register_keydir(args[:directory], table)
