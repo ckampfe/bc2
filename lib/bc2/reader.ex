@@ -11,7 +11,8 @@ defmodule Bc2.Reader do
            {:file_open,
             :file.open(Controller.database_file(directory, file_id), [:raw, :read, :binary])},
          {_, {:ok, _value} = reply} <-
-           {:fs_read, Fs.read(file, entry_position, key, value_size)} do
+           {:fs_read, Fs.read(file, entry_position, key, value_size)},
+         :ok <- :file.close(file) do
       reply
     else
       {:key_lookup, []} ->

@@ -113,9 +113,14 @@ defmodule Bc2.Fs do
 
   def load_records(file_path, f) do
     {:ok, file} = :file.open(file_path, [:raw, :read, :binary])
-    file_id = Path.basename(file_path, ".bc2")
-    {file_id, _} = Integer.parse(file_id)
-    do_load_records(file, file_id, 0, f)
+
+    try do
+      file_id = Path.basename(file_path, ".bc2")
+      {file_id, _} = Integer.parse(file_id)
+      do_load_records(file, file_id, 0, f)
+    after
+      :file.close(file)
+    end
   end
 
   defp do_load_records(file, file_id, position, f) do
@@ -155,7 +160,6 @@ defmodule Bc2.Fs do
         do_load_records(file, file_id, position + prefix_size() + key_size + value_size, f)
 
       :eof ->
-        :file.close(file)
         :ok
 
       {:error, _} = e ->
