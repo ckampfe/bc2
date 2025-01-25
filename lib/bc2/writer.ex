@@ -2,7 +2,7 @@ defmodule Bc2.Writer do
   @moduledoc false
 
   use GenServer
-  alias Bc2.{Controller, Fs}
+  alias Bc2.{Fs, Keydir, MetaTable}
 
   defstruct [:table, :directory, :file_id, :file, :entry_position]
 
@@ -29,15 +29,15 @@ defmodule Bc2.Writer do
   def init(args) do
     Process.set_label("Writer for #{args[:directory]}")
 
-    table = :ets.new(:bc2_keydir, [:public, :set, read_concurrency: true])
+    table = Keydir.new()
 
-    Controller.register_keydir(args[:directory], table)
+    MetaTable.register_keydir(args[:directory], table)
 
     {:ok, latest_file_id} = Fs.load_keydir_from_files(args[:directory])
 
     file_id = latest_file_id + 1
 
-    path = Controller.database_file(args[:directory], file_id)
+    path = MetaTable.database_file(args[:directory], file_id)
 
     {:ok, file} = :file.open(path, [:read, :append, :raw, :binary])
 
@@ -50,7 +50,7 @@ defmodule Bc2.Writer do
     {:ok, %{key_size: key_size, value_size: value_size}} =
       Fs.write(state.file, key, :bc2_delete)
 
-    :ets.delete(state.table, key)
+    Keydir.delete(state.table, key)
 
     state = %{
       state
@@ -64,7 +64,7 @@ defmodule Bc2.Writer do
     {:ok, %{key_size: key_size, value_size: value_size, timestamp: timestamp}} =
       Fs.write(state.file, key, value)
 
-    :ets.insert(state.table, {key, state.file_id, value_size, state.entry_position, timestamp})
+    Keydir.insert(state.table, key, state.file_id, value_size, state.entry_position, timestamp)
 
     state = %{
       state

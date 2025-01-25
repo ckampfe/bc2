@@ -12,7 +12,7 @@ defmodule Bc2.Application do
         Registry,
         keys: :unique, name: Bc2.Registry, partitions: System.schedulers_online()
       },
-      {Bc2.Controller, %{}},
+      {Bc2.MetaTable, %{}},
       {Bc2.DatabasesSupervisor, %{}}
     ]
 

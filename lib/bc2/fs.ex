@@ -1,5 +1,5 @@
 defmodule Bc2.Fs do
-  alias Bc2.Controller
+  alias Bc2.{Keydir, MetaTable}
 
   @moduledoc false
 
@@ -88,23 +88,17 @@ defmodule Bc2.Fs do
       end)
       |> Enum.max(&>=/2, fn -> 0 end)
 
-    {:ok, keydir_table} = Controller.fetch_keydir(directory)
+    {:ok, keydir_table} = MetaTable.fetch_keydir(directory)
 
     :ok =
       Enum.each(db_files, fn db_file ->
         :ok =
           load_records(db_file, fn
             {:insert, record} ->
-              :ets.insert(
-                keydir_table,
-                record
-              )
+              Keydir.insert(keydir_table, record)
 
             {:delete, {key, _, _, _, _}} ->
-              :ets.delete(
-                keydir_table,
-                key
-              )
+              Keydir.delete(keydir_table, key)
           end)
       end)
 

@@ -1,15 +1,15 @@
 defmodule Bc2.Reader do
   @moduledoc false
 
-  alias Bc2.{Controller, Fs}
+  alias Bc2.{Fs, Keydir, MetaTable}
 
   def fetch(directory, key) do
-    with {_, {:ok, keydir_table}} <- {:fetch_keydir, Controller.fetch_keydir(directory)},
+    with {_, {:ok, keydir_table}} <- {:fetch_keydir, MetaTable.fetch_keydir(directory)},
          {_, [{^key, file_id, value_size, entry_position, _timestamp}]} <-
-           {:key_lookup, :ets.lookup(keydir_table, key)},
+           {:key_lookup, Keydir.fetch(keydir_table, key)},
          {_, {:ok, file}} <-
            {:file_open,
-            :file.open(Controller.database_file(directory, file_id), [:raw, :read, :binary])},
+            :file.open(MetaTable.database_file(directory, file_id), [:raw, :read, :binary])},
          {_, {:ok, _value} = reply} <-
            {:fs_read, Fs.read(file, entry_position, key, value_size)},
          :ok <- :file.close(file) do
@@ -27,8 +27,8 @@ defmodule Bc2.Reader do
   end
 
   def keys(directory) do
-    with {_, {:ok, keydir_table}} <- {:fetch_keydir, Controller.fetch_keydir(directory)} do
-      :ets.select(keydir_table, [{{:"$1", :_, :_, :_, :_}, [], [:"$1"]}])
+    with {_, {:ok, keydir_table}} <- {:fetch_keydir, MetaTable.fetch_keydir(directory)} do
+      Keydir.keys(keydir_table)
     end
   end
 end

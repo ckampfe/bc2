@@ -1,4 +1,4 @@
-defmodule Bc2.Controller do
+defmodule Bc2.MetaTable do
   @moduledoc false
 
   use GenServer

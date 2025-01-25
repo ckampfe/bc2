@@ -7,7 +7,7 @@
 # - [ ] should database load and merge processes start from the oldest or the newest db file?
 
 defmodule Bc2 do
-  alias Bc2.{Controller, DatabasesSupervisor, Reader, Writer}
+  alias Bc2.{DatabasesSupervisor, MetaTable, Reader, Writer}
 
   @doc """
   Create a new database or open it if it exists.
@@ -93,7 +93,7 @@ defmodule Bc2 do
   """
   def close(directory) when is_binary(directory) do
     with {_, :ok} <- {:sync, sync(directory)},
-         {_, true} <- {:delete_keydir, Controller.delete_keydir(directory)},
+         {_, true} <- {:delete_keydir, MetaTable.delete_keydir(directory)},
          {_, :ok} <- {:stop_writer, DatabasesSupervisor.stop_writer(directory)} do
       :ok
     end
